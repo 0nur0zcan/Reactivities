@@ -1,10 +1,10 @@
 import React, {Fragment, useEffect, useState} from 'react';
-import axios from 'axios';
 import 'semantic-ui-css/semantic.min.css'
 import { Container } from 'semantic-ui-react'
-import { IActivity } from '../models/Activity';
+import { IActivity } from '../models/activity';
 import NavBar from '../../features/nav/NavBar';
 import ActivityDashboard from '../../features/activities/dashboard/ActivityDashboard';
+import agent from '../api/agent';
 
 function App() {
    const [activities, setActivities] = useState<IActivity[]>([]);
@@ -22,25 +22,33 @@ function App() {
    }
 
    const handleCreateActivity = (activity: IActivity) => {
-     setActivities([...activities, activity]);
-     setSelectedActivity(activity);
-     setEditMode(false);
+     agent.Activities.create(activity).then(() => {
+      setActivities([...activities, activity]);
+      setSelectedActivity(activity);
+      setEditMode(false);
+     })
    }
 
    const handleEditActivity = (activity: IActivity) => {
-     setActivities([...activities.filter(a => a.id !== activity.id), activity]);
-     setSelectedActivity(activity);
-     setEditMode(false);
+    agent.Activities.update(activity).then(() => {
+      setActivities([...activities.filter(a => a.id !== activity.id), activity]);
+      setSelectedActivity(activity);
+      setEditMode(false);
+    })
    }
 
    const handleDeleteActivity = (id: string) => {
-     setActivities([...activities.filter(a => a.id !== id)]);
+    agent.Activities.delete(id).then(() => {
+      setActivities([...activities.filter(a => a.id !== id)]);
+      if (selectedActivity && selectedActivity.id === id)
+        setSelectedActivity(null);
+    })
    }
 
   useEffect(() => {
-    axios.get<IActivity[]>("http://localhost:5000/api/activities").then(response => {
+    agent.Activities.list().then(response => {
       let activities: IActivity[] = [];
-      response.data.forEach(a => {
+      response.forEach(a => {
         a.date = a.date.split('.')[0];
         activities.push(a);
       });
